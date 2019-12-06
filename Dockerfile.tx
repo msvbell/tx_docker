@@ -1,8 +1,10 @@
-FROM centos:8
+FROM centos:7
 
 RUN yum update -y && yum install -y \
     java-1.8.0-openjdk \
-    java-1.8.0-openjdk-devel
+    java-1.8.0-openjdk-devel \
+    dos2unix
 
 COPY ./server /app
-ENTRYPOINT ["/app/server.sh"]
+RUN dos2unix /app/server.sh
+ENTRYPOINT ["sh", "/app/server.sh"]
