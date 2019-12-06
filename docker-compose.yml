@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+
+  tx:
+    build:
+      context: .
+      dockerfile: Dockerfile.tx
+    volumes:
+    - "./logs/tx:/logs"
+    ports:
+    - "10010:10010"
+    - "10012:10012"
+    - "10013:10013"
+    - "80:80"
+    - "443:443"

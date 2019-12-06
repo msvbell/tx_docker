@@ -1,0 +1,211 @@
+#!/bin/bash
+#
+# chkconfig: 345 95 5
+# description: Instance #N Daemon
+
+#--------- Start of configuration variables
+
+#instance id
+export INSTANCE_ID=???
+
+#name of the service, should be equal to this script name
+SERVICE_NAME=instance???
+
+#OS username who will start process
+U_NAME=someuser
+
+#Path to base directory. Ex.: /home/someuser/base
+B_DIR=/home/$U_NAME/base
+
+#name of the instance runner scrpit
+RUNNER_NAME="runInstance"
+
+#additional classpath for this particular instance
+export ADD_CP=
+
+#additional java args for this particular instance
+export ADD_JAVA_ARGS=
+
+#uncomment and edit to use specific java binary for this particular instance instead of java binary specified in instance runner script
+#export JAVA_COMMAND=java
+
+#uncomment and edit to use specific java arguments for this particular instance instead of java arguments specified in instance runner script
+#export JAVA_ARGS="-Xmx4g -Xms3g -XX:MaxPermSize=1536m -XX:ReservedCodeCacheSize=350m -XX:+HeapDumpOnOutOfMemoryError -XX:+ExitOnOutOfMemoryError -cp starter.jar:$ADD_CP $ADD_JAVA_ARGS"
+
+#uncomment and edit to use specific application arguments for this particular instance instead of application arguments specified in instance runner script
+#export APP_ARGS="org.radixware.kernel.starter.Starter -configFile instance$INSTANCE_ID.cfg"
+
+#--------- End of configuration variables  
+
+
+#--------- Internal variables
+
+export RUNNER_PID_FILE_PREFIX="${RUNNER_NAME}_${INSTANCE_ID}"
+export RUNNER_PID_FILE="$B_DIR/$RUNNER_PID_FILE_PREFIX.pid"
+export APP_PID_FILE="$B_DIR/${RUNNER_PID_FILE_PREFIX}_app.pid"
+export LOG_FILE=$B_DIR/$RUNNER_PID_FILE_PREFIX.log
+SUBSYS_LOCK_FILE=/var/lock/subsys/$SERVICE_NAME
+
+srv_start() {
+    if [ -f $RUNNER_PID_FILE ] || [ -f $APP_PID_FILE ] ; then
+        echo "Instance $INSTANCE_ID runner process is already started"
+    	echo "(determined by existing $RUNNER_PID_FILE and/or $APP_PID_FILE)"
+	echo "If you are sure that instance and runner are dead,"
+    	echo "remove pid files and call start again."
+   else
+        echo -n "Starting runner for Instance $INSTANCE_ID"
+	run_command="cd ${B_DIR} && ./${RUNNER_NAME} > ${LOG_FILE} 2>&1 &"
+        if [ "$USER" == "$U_NAME" ] ; then
+            eval $run_command	    
+	else
+            su -p -s /bin/bash - $U_NAME -c "$run_command" 
+	    su_result=$?
+            if [ $? -ne 0 ] ; then
+                echo "Unable to execute start command"
+                exit 1
+            fi			
+	fi	
+        let sec=0
+        while [ ! -f $RUNNER_PID_FILE ] ; do
+            if [ $sec -eq 3 ] ; then
+                echo " Instance $INSTANCE_ID runner process was not launched in time, check $LOG_FILE"
+                return 1
+            else 
+                sleep 1
+                echo -n "."
+                let sec=$sec+1  
+            fi
+        done
+        echo
+        echo "Instance $INSTANCE_ID runner process has been started, waiting for instance process itself to start"
+        let sec=0
+        while [ ! -f $APP_PID_FILE ] ; do
+            if [ $sec -eq 3 ] ; then
+                echo "Instance $INSTANCE_ID process was not launched in time, check $LOG_FILE"
+		return 1	        
+            else
+                sleep 1
+                echo -n "."
+                let sec=$sec+1
+            fi
+        done
+        echo
+        echo "Instance $INSTANCE_ID process started. Runner pid file: $RUNNER_PID_FILE, Application pid file: $APP_PID_FILE"
+        touch "$SUBSYS_LOCK_FILE"
+    fi
+}
+
+srv_stop() {
+	if [ ! -f $RUNNER_PID_FILE ] ; then
+		echo "Instance $INSTANCE_ID runner seem to be dead, stopping instance itself..."
+	else
+        echo "$RUNNER_PID_FILE : `cat $RUNNER_PID_FILE`"
+		RUNNER_FPID=`cat $RUNNER_PID_FILE`
+        if [ -z $RUNNER_FPID ] ; then
+            echo "Unable to determine Instance $INSTANCE_ID runner pid from $RUNNER_PID_FILE, quiting"
+            return 1
+        fi 
+        echo "Instance $INSTANCE_ID runner pid is $RUNNER_FPID"
+	RUNNER_RPID=`ps aux | grep $RUNNER_FPID | grep $RUNNER_NAME  | grep -v grep | awk '{ print $2; }'`
+        echo "Removing Instance $INSTANCE_ID runner pid file"
+		rm $RUNNER_PID_FILE
+		if [ -n "$RUNNER_FPID" ] && [ -n "$RUNNER_RPID" ] && [ "$RUNNER_FPID" -eq "$RUNNER_RPID"  ] ; then
+			echo "Stopping Instance $INSTANCE_ID runner first..."
+			sleep 1
+                        RUNNER_RPID=`ps aux | grep $RUNNER_FPID | grep $RUNNER_NAME  | grep -v grep | awk '{ print $2; }'`
+			if [ -n $RUNNER_RPID ] ; then 
+                            kill -9 $RUNNER_FPID
+			    KILL_RETURN=$?
+			    sleep 1
+			    if [ $KILL_RETURN -eq 0 ] ; then 
+                               echo "`date -R` Instance $INSTANCE_ID runner has been killed by service stop command" >> $LOG_FILE
+			    fi
+			    echo "Instance $INSTANCE_ID runner has been stopped (kill returned $KILL_RETURN)"
+                        else
+                            echo "Instance $INSTANCE_ID runner has been stopped"
+                        fi
+		else
+			echo "Instance $INSTANCE_ID runner doesn't seem to be alive, stopping application..."
+		fi 
+	fi
+    if [ -f $APP_PID_FILE ] ; then
+		echo "Stopping Instance $INSTANCE_ID application..."
+		APP_FPID=`cat $APP_PID_FILE`
+        if [ -z $APP_FPID ] ; then
+            echo "Unable to determine Instance $INSTANCE_ID application pid from $APP_PID_FILE, quiting"
+            return 1
+        fi
+        APP_RPID=`ps aux | grep $APP_FPID | grep Starter | grep -v grep | awk '{ print $2; }'`
+        if [ -n "$APP_FPID" ] && [ -n "$APP_RPID" ] && [ "$APP_FPID" -eq "$APP_RPID"  ] ; then
+            echo "Attempting to stop $INSTANCE_ID application (pid=$APP_FPID)" 
+		    let cnt=0
+		    kill -15 -- ${APP_FPID}
+		    while [ -e /proc/${APP_FPID} ] ; do
+    		    if [ $cnt -eq 60 ] ; then
+	    		    echo
+		            echo -n "Instance $INSTANCE_ID didn't stop in a minute, trying to kill process $APP_FPID" 
+                	kill -9 -- ${APP_FPID}
+				    else	
+					    let cnt=$cnt+1
+			            sleep 1
+	                    echo -n '.'
+				    fi
+            done
+			echo
+        else
+            echo "Instance $INSTANCE_ID application doesn't seem to be alive, just removing locks and pidfiles"
+        fi 
+        [ -f $APP_PID_FILE ] && rm $APP_PID_FILE
+        [ -f $SUBSYS_LOCK_FILE ] && rm -f $SUBSYS_LOCK_FILE
+        echo "Instance $INSTANCE_ID has been stopped"
+    else
+        echo "Instance $INSTANCE_ID is not started"
+    fi
+}
+
+srv_status() {
+    if [ -f $RUNNER_PID_FILE ] ; then
+        RUNNER_FPID=`cat $RUNNER_PID_FILE`
+        RUNNER_RPID=`ps aux | grep $RUNNER_FPID | grep $RUNNER_NAME | grep -v grep | awk '{ print $2; }'`
+        if [ -n "$RUNNER_FPID" ] && [ -n "$RUNNER_RPID" ] && [ "$RUNNER_FPID" -eq "$RUNNER_RPID" ] ; then
+            echo "Instance $INSTANCE_ID runner is started"
+            return 0
+        else
+            echo "Instance $INSTANCE_ID runner has pid file but not started"
+            return 1
+        fi
+    else
+        echo "Instance $INSTANCE_ID runner is not started"
+        return 1
+    fi
+}
+
+if [[ $EUID -ne 0 ]]; then
+   echo "You must have super user privileges to execute this scropt" 1>&2
+   exit 100
+fi
+
+case "$1" in
+        start)
+        srv_start
+        ;;
+        stop)
+        srv_stop
+        ;;
+        status)
+            srv_status
+        ;;
+        restart)
+        srv_stop
+        srv_start
+        ;;
+        reload)
+        srv_stop
+        srv_start
+        ;;
+        *)
+                echo "Usage: $_NAME {start|stop|status|reload|restart}"
+                exit 1
+        ;;
+esac
+

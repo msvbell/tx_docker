@@ -1,0 +1,111 @@
+#!/bin/bash
+
+#------- Start of configuration variables
+
+LOG_FILE="/app/server/runInstance_1.log"
+
+#Download actual starter version automatically before each run
+AUTO_REFRESH_STARTER=1
+
+#Delay between automatic restarts in seconds
+RESTART_DELAY_SEC=3
+
+#Exit code which will be used by application to indicate that it requires planned restart, 
+#can be overriden by explicit starter parameter restartExitCode
+RDX_STARTER_RESTART_EXIT_CODE=1
+
+#Restart on any nonzero exit code (not only on restart exit code).
+# Useful for Production environment where it's generally good to restart instance after each unplanned stop
+RESTART_ON_ANY_NONZERO_CODE=1
+
+#Default java command
+DEFAULT_JAVA_COMMAND=java
+
+#Specific arguments for Java 8. If you are using Java 7, comment this line and uncomment JAVA_7_SPECIFIC_ARGS below
+JAVA_8_SPECIFIC_ARGS="-XX:+ExitOnOutOfMemoryError"
+
+#Uncommment and edit if necessary if you are using Java 7
+#JAVA_7_SPECIFIC_ARGS="-XX:MaxPermSize=1536m"
+
+#Default java arguments
+DEFAULT_JAVA_ARGS="-Xmx4g -Xms3g -XX:ReservedCodeCacheSize=350m -XX:+HeapDumpOnOutOfMemoryError -cp starter.jar:$ADD_CP  $JAVA_7_SPECIFIC_ARGS $JAVA_8_SPECIFIC_ARGS $ADD_JAVA_ARGS"
+
+#------- End of configuration variables
+
+if [ -z $INSTANCE_ID ] ; then
+    echo "INSTANCE_ID environment variable is undefined"
+    exit 1
+fi
+
+if [ -z $JAVA_COMMAND ] ; then
+    JAVA_COMMAND="$DEFAULT_JAVA_COMMAND"
+fi
+
+if [ -z $JAVA_ARGS ] ; then
+    JAVA_ARGS="$DEFAULT_JAVA_ARGS"
+fi
+
+CONFIG_FILE_NAME=instance$INSTANCE_ID.cfg
+
+if [ ! -f $CONFIG_FILE_NAME ] ; then
+    echo "$CONFIG_FILE_NAME file is not found in `pwd`"
+    exit 1
+fi
+
+if [ -z $APP_ARGS] ; then
+    APP_ARGS="org.radixware.kernel.starter.Starter -configFile $CONFIG_FILE_NAME"
+fi
+
+RUNNER_PID=$$
+
+set -m #enable fg 
+
+echo $RUNNER_PID > $RUNNER_PID_FILE
+
+echo "`date -R` Created $RUNNER_PID_FILE, runner pid $RUNNER_PID"
+
+while [ 1 ] ; do
+
+        if [ $AUTO_REFRESH_STARTER -eq 1 ] ; then
+	    echo "`date -R` Trying to download fresh starter.jar..." 
+            $JAVA_COMMAND -jar starter.jar -configFile $CONFIG_FILE_NAME export org.radixware/kernel/starter/bin/dist/starter.jar
+	fi
+
+	RUN_INSTANCE_COMMAND="$JAVA_COMMAND $JAVA_ARGS $APP_ARGS >> $LOG_FILE &"
+	echo "`date -R` Starting instance process with the following command:"
+        echo " $RUN_INSTANCE_COMMAND"
+
+	eval $RUN_INSTANCE_COMMAND
+
+	JAVA_PID=($!)
+
+	echo $JAVA_PID > $APP_PID_FILE
+	echo "`date -R` Launched instance $INSTANCE_ID, java process pid $JAVA_PID"
+
+	wait $JAVA_PID
+
+	EXIT_CODE=$?
+
+	rm "$APP_PID_FILE"
+
+	if [ "$EXIT_CODE" -eq "0" ] ; then
+		rm $RUNNER_PID_FILE
+		echo "`date -R` Instance $INSTANCE_ID process exited with zero code, terminating"
+		exit 0; 
+	fi
+
+	if [ ! -f $RUNNER_PID_FILE ] ; then 
+		echo "`date -R` Instance $INSTANCE_ID process exited with non-zero code $EXIT_CODE when stop was requested ($RUNNER_PID_FILE has been removed), terminating"
+		exit $EXIT_CODE;
+	fi
+
+	echo "`date -R` Instance $INSTANCE_ID exited with non-zero code $EXIT_CODE, restarting after $RESTART_DELAY_SEC sec delay"
+
+	sleep $RESTART_DELAY_SEC
+
+	if [ ! -f $RUNNER_PID_FILE ] ; then
+                echo "`date -R` $RUNNER_PID_FILE has been removed (probably stop has been requested), terminating"
+                exit $EXIT_CODE;
+        fi
+
+done

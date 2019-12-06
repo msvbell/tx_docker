@@ -1,0 +1,31 @@
+This instruction assumes that there is a base direcotry somewhere on server machine for config files/scripts/etc, and that two files are available:
+
+ - instanceN_daemon_template - this is a template for deamon script which should be placed to /etc/init.d folder. There should be separate daemon script for each instance. For example, for Instance #1 - /etc/init.d/instance1, for Instance #5 - /etc/init.d/instance5. 
+ - runInstance - this is a helper script which will be used by all daemon scripts to actually run particular instance
+
+Steps:
+
+1) put runInstance to base directory
+
+2) ensure that runInstance is executable and accessible for appropriate OS user,
+this can be done by the following commands: "chown <user> <base directory>/runInstance" and "chmod +x <base directory>/runInstance"
+
+After that for each instance (assuming instance id is N):
+
+1) put instance #N configuration file to <base directory>/instanceN.cfg 
+(here and below N should be replaced with actual instance id, for example, instance1.cfg)
+
+2) create service launcher script in /etc/init.d as a copy of instanceN_daemon_template. Choose appropriate name for service script, such as instanceN
+
+3) fill configuration variables at the top of the created service launcher script
+
+4) Ensure that service launcher script is executable. Service launcher script should be runned with sudo privileges.
+
+7) if the system is redhat, run "sudo chkconfig --add instanceN"
+   if the system is ubuntu, run "sudo update-rc.d instanceN defaults 95"
+
+8) Check service work: 
+    sudo /etc/init.d/instanceN start
+    sudo /etc/init.d/instanceN status
+    sudo /etc/init.d/instanceN stop
+
