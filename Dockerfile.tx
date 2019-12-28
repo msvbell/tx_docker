@@ -1,3 +1,12 @@
+FROM openjdk:8 AS builder
+
+ENV MANAGER_FILE=manager_1_2_11_27_7.zip
+
+COPY ./${MANAGER_FILE} /tmp/manager.zip
+
+RUN apt-get install -y unzip && \
+    unzip /tmp/manager.zip -d /tmp
+
 FROM centos:7
 
 RUN yum update -y && yum install -y \
@@ -5,6 +14,12 @@ RUN yum update -y && yum install -y \
     java-1.8.0-openjdk-devel \
     dos2unix
 
+ARG INSTANCE_PORT
+ARG EAS_PORT
+ENV INST_PORT=$INST_PORT
+ENV EASARG_PORT=$EAS_PORT
+
 COPY ./server /app
 RUN dos2unix /app/server.sh
+RUN bash -c "/app/init_config.sh"
 ENTRYPOINT ["sh", "/app/server.sh"]

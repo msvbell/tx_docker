@@ -3,14 +3,41 @@ version: '3.7'
 services:
 
   tx:
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: Dockerfile.tx
-    volumes:
-    - "./logs/tx:/logs"
+      args:
+        INST_PORT: ${INSTANCE_PORT}
+        EASARG_PORT: ${EAS_PORT}
+    depends_on:
+      - svn
+      - db
     ports:
-    - "10010:10010"
-    - "10012:10012"
-    - "10013:10013"
-    - "80:80"
-    - "443:443"
+    - "${INSTANCE_PORT}:${INSTANCE_PORT}"
+    - "${EAS_PORT}:${EAS_PORT}"
+
+  db:
+    image: oracle/database:12.2.0.1-ee
+#    volumes:
+#    - "./db/dump/setup.sql:/opt/oracle/scripts/setup/0.sql"
+#    - "./db/dump:/opt/oracle/scripts/startup"
+    environment:
+      ORACLE_SID: TX
+      ORACLE_PWD: q3sermon*&
+      USER: TX
+    ports:
+    - "1521:1521"
+
+  svn:
+    build:
+      context: .
+      dockerfile: Dockerfile.svnn
+    ports:
+    - "18080:18080"
+    - "3343:3343"
+    - "4434:4434"
+
+#volumes:
+#  svndata:

@@ -1,0 +1,14 @@
+FROM mamohr/subversion-edge
+
+ARG SVN_USER
+ARG SVN_PASSWORD
+
+ENV RUN_AS_USER=collabnet
+ENV REPOSITORY_DIR="/opt/csvn/data/repositories/TX"
+ENV SVN_USER=${SVN_USER:-TX}
+ENV SVN_PASSWORD=${SVN_PASSWORD:-TX}
+
+COPY docker/svn/conf /opt/csvn/data/conf
+COPY scripts/init_repository.sh /tmp/init_repository.sh
+
+ENTRYPOINT ["/tmp/init_repository.sh"]
