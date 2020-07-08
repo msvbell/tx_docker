@@ -16,10 +16,14 @@ RUN yum update -y && yum install -y \
 
 ARG INSTANCE_PORT
 ARG EAS_PORT
+ARG SVN_PORT
+ENV SVN_PORT=${SVN_PORT:-18080}
 ENV INST_PORT=$INST_PORT
 ENV EASARG_PORT=$EAS_PORT
 
-COPY ./server /app
-RUN dos2unix /app/server.sh
-RUN bash -c "/app/init_config.sh"
-ENTRYPOINT ["sh", "/app/server.sh"]
+COPY ./server /app/server
+COPY ./init/project_for_manager /app/project
+#COPY --from-build=builder /tmp/manager /app/manager
+RUN dos2unix /app/server/server.sh
+RUN bash -c "/app/server/init_config.sh"
+ENTRYPOINT ["sh", "/app/server/server.sh"]

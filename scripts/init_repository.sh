@@ -10,10 +10,10 @@ if [ ! -d "$REPOSITORY_DIR" ]; then
 fi
 
 sed -i "s/Name=\"TEST\"/Name=\"$TEST_DB_NAME\"/" /tmp/repository.dumpfile
-sed -i "s#jdbc:oracle:thin:@localhost:1521/TEST#jdbc:oracle:thin:@localhost:1521/$TEST_DB_NAME#" /tmp/repository.dumpfile
+sed -i "s#jdbc:oracle:thin:@localhost:1521/TEST#jdbc:oracle:thin:@localhost:1521/$DB_SID#" /tmp/repository.dumpfile
 sed -i "s/Schema=\"TEST\"/Schema=\"$TEST_DB_NAME\"/" /tmp/repository.dumpfile
 sed -i "s/Name=\"PROD\"/Name=\"$PROD_DB_NAME\"/" /tmp/repository.dumpfile
-sed -i "s#jdbc:oracle:thin:@localhost:1521/PROD#jdbc:oracle:thin:@localhost:1521/$PROD_DB_NAME#" /tmp/repository.dumpfile
+sed -i "s#jdbc:oracle:thin:@localhost:1521/PROD#jdbc:oracle:thin:@localhost:1521/$DB_SID#" /tmp/repository.dumpfile
 sed -i "s/Schema=\"PROD\"/Schema=\"$PROD_DB_NAME\"/" /tmp/repository.dumpfile
 
 # import tranzaxis files to svn

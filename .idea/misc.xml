@@ -3,4 +3,7 @@
   <component name="JavaScriptSettings">
     <option name="languageLevel" value="ES6" />
   </component>
+  <component name="ProjectResources">
+    <resource url="http://schemas.tranzaxis.com/tran.xsd" location="C:/rtp/TX-Protocol-RTP v. 3.2.13(R)/Схемы протокола RTP v.3.2.13/tran.xsd" />
+  </component>
 </project>

@@ -11,6 +11,7 @@ services:
       args:
         INST_PORT: ${INSTANCE_PORT}
         EASARG_PORT: ${EAS_PORT}
+        SVN_PORT: ${SNV_PORT}
     depends_on:
       - svn
       - db
@@ -20,22 +21,27 @@ services:
 
   db:
     image: oracle/database:12.2.0.1-ee
-#    volumes:
-#    - "./db/dump/setup.sql:/opt/oracle/scripts/setup/0.sql"
-#    - "./db/dump:/opt/oracle/scripts/startup"
+    volumes:
+    - "./db/dump/0_tablespace.sql:/docker-entrypoint-initdb.d/setup/0.sql"
+    - "./TX_dump.sql:/docker-entrypoint-initdb.d/setup/1.sql"
+#    - "./db/dump/0_tablespace.sql:/docker-entrypoint-initdb.d/setup/0.sql"
+#    - "./db/dump/setup.sql:/docker-entrypoint-initdb.d/setup/0.sql"
+#    - "./db/dump:/docker-entrypoint-initdb.d/startup"
     environment:
       ORACLE_SID: TX
-      ORACLE_PWD: q3sermon*&
-      USER: TX
+      ORACLE_PDB: TXDEV
+      ORACLE_PWD: "123qwe"
     ports:
     - "1521:1521"
 
   svn:
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: Dockerfile.svnn
     ports:
-    - "18080:18080"
+    - "${SVN_PORT}:18080"
     - "3343:3343"
     - "4434:4434"
 

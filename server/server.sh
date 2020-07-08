@@ -25,9 +25,9 @@ export RESTART_ON_ANY_NONZERO_EXIT_CODE=1
 
 
 # *****************  Run ******************* 
-export CP="-cp /app/starter.jar"$ADD_CP
+export CP="-cp /app/server/starter.jar"$ADD_CP
 export STARTER="org.radixware.kernel.starter.Starter"
-export STARTER_OPTIONS="-configFile /app/server.cfg"
+export STARTER_OPTIONS="-configFile /app/server/server.cfg"
 
 
 updateStarter() {
