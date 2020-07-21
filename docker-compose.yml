@@ -6,8 +6,8 @@ services:
     env_file:
       - .env
     build:
-      context: .
-      dockerfile: Dockerfile.tx
+      context: ./tranzaxis
+      dockerfile: Dockerfile
       args:
         INST_PORT: ${INSTANCE_PORT}
         EASARG_PORT: ${EAS_PORT}
@@ -38,8 +38,8 @@ services:
     env_file:
       - .env
     build:
-      context: .
-      dockerfile: Dockerfile.svnn
+      context: ./svn
+      dockerfile: Dockerfile
     ports:
     - "${SVN_PORT}:18080"
     - "3343:3343"
