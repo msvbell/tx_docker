@@ -1,6 +1,0 @@
-Scripts for test and production environment
-
-- Put it into any folder
-- copy org.radixware\kernel\starter\bin\dist\starter.jar into this folder
-- edit "!explorer.cmd", "!server.cmd" or "server.sh", "explorer.sh"
-- edit server.cfg, explorer.cfg, wps.cfg
