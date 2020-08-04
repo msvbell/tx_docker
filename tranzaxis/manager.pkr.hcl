@@ -31,7 +31,8 @@ build {
     repository = "local/manager"
     tag = "0.1"
     changes = [
-      "ENTRYPOINT /tmp/manager/bin/console"
+      "ENTRYPOINT [\"/tmp/manager/bin/console\"]",
+      "CMD [\"CMD_HELP\"]"
     ]
   }
 }
