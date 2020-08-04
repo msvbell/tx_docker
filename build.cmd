@@ -1,0 +1,1 @@
+cmd /c packer build tranzaxis/manager.pkr.hcl

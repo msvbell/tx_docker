@@ -1,0 +1,29 @@
+{
+  "source": {
+    "docker": {
+      "example": {
+        "image": "openjdk:8",
+        "export_path": "openjdk.tar"
+      }
+    }
+  },
+  "build": {
+    "sources": [
+      "source.docker.example"
+    ],
+    "provisioner": [
+      {
+        "shell": {
+          "environment_vars": [
+            "TESTVAR={{build `PackerRunUUID`}}",
+            "TESTVAR2={{.Vars}}"
+          ],
+          "inline": [
+            "echo $TESTVAR",
+            "echo $TESTVAR2"
+          ]
+        }
+      }
+    ]
+  }
+}

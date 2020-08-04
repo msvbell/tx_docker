@@ -2,6 +2,6 @@
 <prod:ManagerProject xmlns:prod="http://schemas.radixware.org/product.xsd" Title="TX" SvnHomeUrl="http://localhost:18080/svn/TX">
   <prod:Upgrade Dir="upgrades" BackupDir="upgrades.backup" TestLogDir="log.test" ProdLogDir="log.prod"/>
   <prod:Distribution Dir="distrib" LogDir="distrib.log"/>
-  <prod:SVNAuthentication UserName="user" Type="SVNPassword" SSHKeyFile=""/>
+  <prod:SVNAuthentication UserName="admin" Type="SVNPassword" SSHKeyFile=""/>
   <prod:KeyStore Type="0" File="C:\Projects\tx_docker\project\keystore\config.jceks"/>
 </prod:ManagerProject>

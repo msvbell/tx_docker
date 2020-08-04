@@ -1,11 +1,16 @@
 FROM openjdk:8 AS builder
 
-ENV MANAGER_FILE=manager_1_2_11_27_7.zip
+ENV MANAGER_NAME=manager_1_2_11_27_7
+ENV MANAGER_FILE=${MANAGER_NAME}.zip
 
-COPY ./init/${MANAGER_FILE} /tmp/manager.zip
+COPY ./${MANAGER_FILE} /tmp/manager.zip
 
 RUN apt-get install -y unzip && \
     unzip /tmp/manager.zip -d /tmp
+
+COPY ./tranzaxis/manager/manager.conf /tmp/${MANAGER_NAME}/manager/etc/manager.conf
+
+RUN /tmp/${MANAGER_NAME}/manager/bin/console
 
 FROM centos:7
 

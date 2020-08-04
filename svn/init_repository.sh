@@ -20,6 +20,6 @@ sed -i "s/Schema=\"PROD\"/Schema=\"$PROD_DB_NAME\"/" /tmp/repository.dumpfile
 # /opt/csvn/bin/svn import --username admin --password admin -m "Init" /tmp/repository_files/ http://localhost:18080/svn/TX
 /opt/csvn/bin/svnadmin load $REPOSITORY_DIR < /tmp/repository.dumpfile
 
-rm -rf /tmp/repository_files /tmp/repository.dumpfile
+# rm -rf /tmp/repository_files /tmp/repository.dumpfile
 
 /config/bootstrap.sh

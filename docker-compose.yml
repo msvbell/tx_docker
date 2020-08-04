@@ -21,18 +21,17 @@ services:
 
   db:
     image: oracle/database:12.2.0.1-ee
-    volumes:
-    - "./db/dump/0_tablespace.sql:/docker-entrypoint-initdb.d/setup/0.sql"
-    - "./TX_dump.sql:/docker-entrypoint-initdb.d/setup/1.sql"
+#    volumes:
+#    - "./db/dump/0_tablespace.sql:/docker-entrypoint-initdb.d/setup/0.sql"
+#    - "./TX_dump.sql:/docker-entrypoint-initdb.d/setup/1.sql"
 #    - "./db/dump/0_tablespace.sql:/docker-entrypoint-initdb.d/setup/0.sql"
 #    - "./db/dump/setup.sql:/docker-entrypoint-initdb.d/setup/0.sql"
 #    - "./db/dump:/docker-entrypoint-initdb.d/startup"
     environment:
       ORACLE_SID: TX
-      ORACLE_PDB: TXDEV
-      ORACLE_PWD: "123qwe"
+      ORACLE_PWD: "123123Qwe"
     ports:
-    - "1521:1521"
+    - "6622:1521"
 
   svn:
     env_file:
@@ -40,10 +39,19 @@ services:
     build:
       context: ./svn
       dockerfile: Dockerfile
+    volumes:
+    - svndata:/opt/csvn/data/repositories
     ports:
-    - "${SVN_PORT}:18080"
+    - "18080:18080"
     - "3343:3343"
     - "4434:4434"
 
-#volumes:
-#  svndata:
+  manager:
+    build:
+      context: ./tranzaxis
+      dockerfile: Dockerfile.manager
+    volumes:
+    - "./tranzaxis/manager/manager.conf:/tmp/manager/etc/manager.conf"
+
+volumes:
+  svndata:

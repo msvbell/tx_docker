@@ -13,9 +13,9 @@ ENV DB_SID=TX
 ENV TEST_DB_NAME=TEST
 ENV PROD_DB_NAME=PROD
 
-COPY init/svn_config /opt/csvn/data/conf
-COPY init/svn_repository_files /tmp/repository_files
-COPY init/repository.dumpfile /tmp/repository.dumpfile
-COPY scripts/init_repository.sh /tmp/init_repository.sh
+COPY svn_config /opt/csvn/data/conf
+COPY svn_repository_files /tmp/repository_files
+COPY repository.dumpfile /tmp/repository.dumpfile
+COPY init_repository.sh /tmp/init_repository.sh
 
 ENTRYPOINT ["/tmp/init_repository.sh"]

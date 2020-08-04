@@ -53,7 +53,6 @@ Node-kind: file
 Node-action: add
 Prop-content-length: 75
 Text-content-length: 345
-Text-content-md5: 60ce1eefaee42052489ef7389959e972
 Text-content-sha1: 5a84656a5d6e80a958dd94d14e6f548078118c15
 Content-length: 420
 
