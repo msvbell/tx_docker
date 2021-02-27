@@ -1,10 +1,10 @@
-variable "dist_uri"     { type = string }
-variable "repo_name"    { type = string }
-variable "svn_user"     { type = string }
-variable "svn_pass" { type = string }
+source "docker" "svn" {
+  image = "mamohr/subversion-edge"
+  commit = true
+}
 
 locals {
-  repo-path = "file:////opt/csvn/data/repositories/${var.repo_name}"
+  repo-path = "file:///${var.repo-path}"
   svn-create-dirs = <<EOF
   mkdir /tmp/repo && cd /tmp/repo && \
   mkdir -p clients \
@@ -15,11 +15,6 @@ locals {
     releases \
     scripts
   EOF
-}
-
-source "docker" "svn" {
-  image = "mamohr/subversion-edge"
-  export_path = "images/svn.tar"
 }
 
 source "file" "db-config" {
@@ -46,13 +41,12 @@ source "file" "repository-config" {
   content = <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <RepositoryConfig xmlns="http://schemas.radixware.org/product.xsd" VersionFormat="2" Title="${var.repo_name}"
-                  DowngradesOffshootsScriptCheck="None" BaseDevUri="${var.dist_uri}" RunUris="${var.dist_uri}" RunUri="${var.dist_uri}"/>
+                  DowngradesOffshootsScriptCheck="None" BaseDevUri="${var.distr_uri}" RunUris="${var.distr_uri}" RunUri="${var.distr_uri}"/>
 EOF
   target = "${path.cwd}/temp/repository.xml"
 }
 
 build {
-  name = "files"
   sources = [
     "source.file.db-config",
     "source.file.notification-config",
@@ -60,10 +54,15 @@ build {
 }
 
 build {
-  name = "SVN server"
-  sources = [
-    "source.docker.svn"
-  ]
+
+
+  source "source.docker.svn" {
+    changes = [
+      "ENV SVN_USER=${var.svn_user}",
+      "ENV SVN_PASSWORD=${var.svn_password}",
+      "ENTRYPOINT [\"/config/init_repository.sh\"]"
+    ]
+  }
 
   provisioner "shell" {
     inline = [
@@ -103,7 +102,7 @@ build {
   provisioner "shell" {
     environment_vars = [
       "SVN_USER=${var.svn_user}",
-      "SVN_PASSWORD=${var.svn_pass}"
+      "SVN_PASSWORD=${var.svn_password}"
     ]
     inline = [
       "chmod +x /config/init_repository.sh",
@@ -117,13 +116,8 @@ build {
     ]
   }
 
-  post-processor "docker-import" {
+  post-processor "docker-tag" {
     repository = "local/tx-svn-base"
-    changes = [
-      "ENV SVN_USER=${var.svn_user}",
-      "ENV SVN_PASSWORD=${var.svn_pass}",
-      "ENTRYPOINT [\"/config/init_repository.sh\"]"
-    ]
   }
 
 }

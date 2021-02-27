@@ -30,4 +30,4 @@
 * В папке `for_users` получаем всё необходимое
 ## Authors
 
-* **Сергей Иванов** - *Initial work* - sv.ivanov@compassplus.com
+* **Сергей Иванов** - *Initial work* - sv.ivanov@compassplus.comf
